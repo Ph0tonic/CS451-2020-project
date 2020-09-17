@@ -4,6 +4,7 @@
 
 #include "barrier.hpp"
 #include "parser.hpp"
+#include "broadcast.hpp"
 #include <signal.h>
 
 static void stop(int) {
@@ -75,12 +76,13 @@ int main(int argc, char **argv) {
   }
 
   std::cout << "Doing some initialization...\n\n";
+  // TODO: Start listening processes 
 
   std::cout << "Waiting for all processes to finish initialization\n\n";
   waitOnBarrier(barrier);
 
   std::cout << "Broadcasting messages...\n\n";
+  broadcastToAll(hosts);
 
-  // TODO: MY CODE HERE 
   return 0;
 }
