@@ -3,6 +3,14 @@
 
 int configureUdpSocket(Parser::Host const &server);
 
+// TODO: In order
+// Reliable link
+// Uniform reliable broadcast
+// FIFO Broadcast
+// LCausal Broadcast
+
+
+
 void broadcastToAll(std::vector<Parser::Host> const &hosts, int const fd);
 
 /* Structure of message required -> minimized size
