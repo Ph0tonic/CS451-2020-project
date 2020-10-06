@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
   }
 
   std::cout << "Doing some initialization...\n\n";
+  rbInit();
 
   Coordinator coordinator(parser.id(), barrier, signal);
 
@@ -100,7 +101,8 @@ int main(int argc, char **argv) {
 
   std::cout << "Signaling end of broadcasting messages\n\n";
   coordinator.finishedBroadcasting();
-
+  rbStop();
+  
   while (true) {
     std::this_thread::sleep_for(std::chrono::seconds(60));
   }

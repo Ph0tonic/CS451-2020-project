@@ -1,5 +1,6 @@
 #pragma once
 #include "parser.hpp"
+#include <pthread.h>
 
 int configureUdpSocket(Parser::Host const &server);
 
@@ -8,8 +9,6 @@ int configureUdpSocket(Parser::Host const &server);
 // Uniform reliable broadcast
 // FIFO Broadcast
 // LCausal Broadcast
-
-
 
 void broadcastToAll(std::vector<Parser::Host> const &hosts, int const fd);
 
@@ -21,10 +20,20 @@ void broadcastToAll(std::vector<Parser::Host> const &hosts, int const fd);
 struct message {
   int packet_id;
   int source_id;
-  int message;
+  size_t message_size;
+  char* message;
 };
 
-int configureUdpSocket(Parser::Host const &host) {
+static void * rbListener (void * p_data) {
+  while(true) {
+    // TODO: Listener
+  }
+}
+
+pthread_t listener = NULL; 
+
+// Base init
+int rbInit(Parser::Host const &host) {
   struct sockaddr_in server;
 
   // Create UDP socket
@@ -42,28 +51,76 @@ int configureUdpSocket(Parser::Host const &host) {
     throw std::runtime_error("Could not bind the server to it's address: " +
                             std::string(std::strerror(errno)));
   }
+
+  int ret = pthread_create (
+    &listener, NULL,
+    rbListener, NULL
+  );
+ 
+   /* Creation des threads des clients si celui du magasin a reussi. */
+   if (! ret)
+   {
+
+   }
 }
 
-void broadcastToAll(std::vector<Parser::Host> const &hosts, int const fd) {
-  struct sockaddr_in server;
-  std::memset(&server, 0, sizeof(server));
+void rbStop() {
+  pthread_cancel(listener);
+  listener = NULL;
+}
+
+void rlSend() {
+  // TODO: Implement a version of TCP  
+}
+
+void rlDeliver() {
+  // TODO: Implement a version of TCP  
+}
+
+void rbBroadcast(std::vector<Parser::Host> const &hosts, int const fd) {
+  struct sockaddr_in client;
+  std::memset(&client, 0, sizeof(client));
 
   for (auto &host : hosts) {
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = host.ip;
-    server.sin_port = host.port;
-    if (connect(fd, reinterpret_cast<struct sockaddr *>(&server),
-                sizeof(server)) < 0) {
-      throw std::runtime_error("Could not connect to the barrier: " +
-                              std::string(std::strerror(errno)));
+    client.sin_family = AF_INET;
+    client.sin_addr.s_addr = host.ip;
+    client.sin_port = host.port;
+
+    char data_buffer[500]; //TODO: Decide format of data
+    size_t size = 123;
+
+    if (sendto(fd, data_buffer, size, 0, (struct sockaddr *)&client, sizeof(client))) {
+      // TODO: error while sending data
     }
 
     char dummy;
     if (recv(fd, &dummy, sizeof(dummy), 0) < 0) {
-      throw std::runtime_error("Could not read from the barrier socket: " +
-                              std::string(std::strerror(errno)));
+      // TODO: error while sending data
     }
   }
 
   close(fd);
+}
+
+// RB4. Agreement:For any message m, if a correct process delivers m, then every correct process delivers m
+
+
+void ubBroadcast() {
+  //TODO: Nothing to do yet
+}
+
+void ubDeliver() {
+  //TODO: Nothing to do yet
+}
+
+void rbDeliver() {
+
+}
+
+void fifoBroadcast() {
+
+}
+
+void fifoDeliver() {
+
 }
