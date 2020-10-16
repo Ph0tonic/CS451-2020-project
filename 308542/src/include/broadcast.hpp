@@ -1,7 +1,8 @@
 #pragma once
 #include "parser.hpp"
 #include <pthread.h>
-#include <atomic.h>
+#include <endian.h>
+// #include <atomic.h>
 
 int configureUdpSocket(Parser::Host const &server);
 
@@ -24,21 +25,18 @@ struct message
 {
   int32_t packet_id;
   int32_t source_id;
+  sockaddr_in addr;
   //TODO: No addition content than the packet_id and source_id
-  // size_t message_size;
-  // char *message;
-}
+};
 
 struct packet
 {
-  // sockaddr_in addr; // Could be added if necessary
-  char[8] buffer;
+  char buffer[8];
 };
 
 struct packet *encode_message(message *m)
 {
-  packet *p = malloc(sizeof(packet));
-  p->size = sizeof(int32_t) + sizeof(int32_t);
+  packet *p = (packet *)malloc(sizeof(packet));
   strncpy(p->buffer, (char *)htonl(m->packet_id), sizeof(int32_t));
   strncpy(p->buffer + sizeof(int32_t), (char *)htonl(m->packet_id), sizeof(int32_t));
   return p;
@@ -46,9 +44,10 @@ struct packet *encode_message(message *m)
 
 struct message *decode_packet(packet *p)
 {
-  message *m = malloc(sizeof(message));
-  m->packet_id = nltoh(m->buffer)
-                     m->source_id = nltoh(m->buffer + sizeof(int32_t)) return m;
+  message *m = (message *)malloc(sizeof(message));
+  m->packet_id = nltoh((int32_t *)p->buffer);
+  m->source_id = nltoh(((int32_t *)p->buffer) + 1);
+  return m;
 }
 
 /* Data Structures */
@@ -89,9 +88,16 @@ scsp_queue_t *new_scsp_queue(size_t size)
   // TODO: Free memory
 }
 
+void push(scsp_queue_t *queue, message *msg)
+{
+  queue->circular_buffer[queue->head] = msg;
+  //atomic_set(); // TODO:
+  queue->head = (queue->head + 1) % queue->size;
+}
+
 void push(scmp_queue_t *queue, size_t id, message *msg)
 {
-  push(queue[id], msg);
+  push(&queue[id], msg);
   queue->new_data = true;
 }
 
@@ -100,12 +106,6 @@ message *pop(scmp_queue_t *queue, size_t id)
   return pop(queue[id]);
 }
 
-void push(scsp_queue_t *queue, message *msg)
-{
-  queue->circular_buffer[queue->head] = msg;
-  atomic_set(); // TODO:
-  queue->head = (queue->head + 1) % queue->size;
-}
 
 message *pop(scsp_queue_t *queue, size_t id)
 {
@@ -155,7 +155,7 @@ int connect(in_port_t port)
 
 conc_linked_queue[] static void *sender(void *p_data)
 {
-  // TODO: Receive thoses variables via parameters
+  // TODO: Receive those variables via parameters
   int sockfd;
   scmp_queue_t *queues;
 
@@ -170,11 +170,11 @@ conc_linked_queue[] static void *sender(void *p_data)
 
       while (msg = pop(queue))
       {
+        struct packet *packet = encode_message(msg);
         sendto(sockfd, (const char *)packet->buffer, strlen(packet->size),
-               NULL, (const struct sockaddr *)&packet->addr,
-               sizeof(packet->addr));
-        // TODO: Check when to free
-        // free(packet->buffer);
+               NULL, (const struct sockaddr *)&msg->addr,
+               sizeof(msg->addr));
+        free(packet->buffer);
       }
     }
   }
@@ -204,12 +204,7 @@ static void *listener(void *p_data)
       //TODO: Socket closed
     }
 
-    // Source addr in cliaddr !
-
-    buffer[n] = '\0';
-    printf("Client : %s\n", buffer);
-
-    // TODO: Manage received message
+    // Manage received message
     struct packet p;
     p->buffer = malloc(n);
     p->size = n;
@@ -219,27 +214,36 @@ static void *listener(void *p_data)
     message *msg = decode_packet(&p);
 
     // Dispatch message to be treated
-    push(receiving_queues->queues[msg->source_id], msg);
+    push(receiving_queues->queues[msg->source_id - 1], msg);
+  }
+}
+
+struct link_info
+{
+  pthread_t p_listener = NULL;
+  pthread_t p_sender = NULL;
+  int sock_id;
+  scmp_queue_t receive;
+  scmp_queue_t send;
+};
+
+// Base init
+struct link_info *rbInit(Parser::Host const &host)
+{
+  struct link_info *link = malloc(sizeof(struct link_info));
+
+  // Create receiver and sender thread
+  int ret1 = pthread_create(&link->p_listener, NULL, listener, NULL);
+  int ret2 = pthread_create(&link->p_sender, NULL, sender, NULL);
+
+  /* Creation des threads des clients si celui du magasin a reussi. */
+  if (!ret1 || !ret2)
+  {
   }
 }
 
 static void *rbListener(void *p_data)
 {
-}
-
-pthread_t p_listener = NULL;
-
-// Base init
-int rbInit(Parser::Host const &host)
-{
-  int ret = pthread_create(
-      &p_listener, NULL,
-      listener, NULL);
-
-  /* Creation des threads des clients si celui du magasin a reussi. */
-  if (!ret)
-  {
-  }
 }
 
 void rbStop()
