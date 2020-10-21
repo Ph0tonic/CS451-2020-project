@@ -153,7 +153,7 @@ int connect(in_port_t port)
   return fd;
 }
 
-conc_linked_queue[] static void *sender(void *p_data)
+static void *sender(void *p_data)
 {
   // TODO: Receive those variables via parameters
   int sockfd;
@@ -165,7 +165,7 @@ conc_linked_queue[] static void *sender(void *p_data)
     for (int i = 0; i < queues->nb_queues; ++i)
     {
       // Just send all packets
-      scsp_queue_t *queue = data->queues[i];
+      scsp_queue_t *queue = queues[i];
       struct packet *msg;
 
       while (msg = pop(queue))
