@@ -1,20 +1,25 @@
 package cs451;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.IntStream;
 
 public class Main {
 
     private static void handleSignal() {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
+        if(broadcast != null){
+            broadcast.stop();
+        }
 
         //write/flush output file if necessary
         System.out.println("Writing output.");
+        //Configured inside the logger
     }
 
     private static void initSignalHandlers() {
@@ -25,6 +30,7 @@ public class Main {
             }
         });
     }
+    private static FifoBroadcast broadcast;
 
     public static void main(String[] args) throws InterruptedException {
         Parser parser = new Parser(args);
@@ -51,30 +57,46 @@ public class Main {
             System.out.println("Config: " + parser.config());
         }
 
+        int nbMessages = 0;
+
+        try {
+            //the file to be opened for reading
+            FileInputStream fis = new FileInputStream(parser.config());
+            Scanner sc = new Scanner(fis);    //file to be scanned
+
+            nbMessages = Integer.parseInt(sc.nextLine());
+
+            sc.close();     //closes the scanner
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new InterruptedException(e.getMessage());
+        }
 
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
 
-        int nbMessages = Integer.parseInt(parser.config());
+        // Init
+        CountDownLatch latch = new CountDownLatch(nbMessages * parser.hosts().size());
+        Logger logger = Logger.getInstance(parser.output());
 
-        FifoBroadcast broadcast = null;
-        CountDownLatch latch = new CountDownLatch(nbMessages*parser.hosts().size());
-
-        try {
-            broadcast = new FifoBroadcast(parser.myId(), nbMessages, parser.hosts(), (originId, messageId) -> {
-                latch.countDown();
-            });
-        } catch (Exception e) {
-            throw new InterruptedException(e.getMessage());
-        }
+        broadcast = new FifoBroadcast(parser.myId(), nbMessages, parser.hosts(), (originId, messageId) -> {
+            latch.countDown();
+            logger.log("d " + originId + " " + messageId);
+        });
 
         System.out.println("Waiting for all links for finish initialization");
         coordinator.waitOnBarrier();
 
         System.out.println("Broadcasting messages...");
+        IntStream.range(1, nbMessages + 1).forEach(i -> {
+            broadcast.broadcast(i);
+            logger.log("b " + i);
+        });
         latch.await();
 
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
+
+        logger.dump();
 
         while (true) {
             // Sleep for 1 hour

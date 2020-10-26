@@ -1,0 +1,1 @@
+./run.sh --id 1 --hosts hosts --barrier localhost:11000 --signal localhost::11001 --output output1.out config

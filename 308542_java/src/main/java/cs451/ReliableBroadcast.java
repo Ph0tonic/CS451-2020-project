@@ -10,10 +10,6 @@ public class ReliableBroadcast {
     private final UdpSocket socket;
     private int pid;
 
-    private List<Host> hosts;
-
-    private String ip;
-    private int port;
     private int nbHosts;
 
     private Map<Integer, PerfectLink> links;
@@ -23,7 +19,6 @@ public class ReliableBroadcast {
 
     public ReliableBroadcast(int pid, int nbMessage, List<Host> hosts, FifoBroadcast broadcast) throws Exception {
         this.pid = pid;
-        this.hosts = hosts;
         this.nbHosts = hosts.size();
         this.broadcast = broadcast;
 
@@ -31,17 +26,16 @@ public class ReliableBroadcast {
         if (host.isEmpty()) {
             throw new Exception("Not able to find host info");
         }
-        this.ip = host.get().getIp();
-        this.port = host.get().getPort();
 
         // Init socket and links
-        this.links = hosts.stream().collect(Collectors.toMap(Host::getId, PerfectLink::new));
-        this.socket = new UdpSocket(this.ip, this.port, links, hosts);
+        this.links = hosts.stream().filter(e -> e.getId() != pid).collect(Collectors.toMap(Host::getId, PerfectLink::new));
+        this.socket = new UdpSocket(host.get().getIp(), host.get().getPort(), links, hosts);
 
         // Start perfectLinks
         this.links.forEach((Integer id, PerfectLink l) -> l.init(socket, this));
         this.links.forEach((i, p) -> new Thread(p).start());
 
+        linkDelivered = new ConcurrentHashMap<>();
         hosts.forEach(h -> linkDelivered.put(h.getId(), new ConcurrentHashMap<>()));
         linkDelivered.forEach((o, m) -> {
             IntStream.range(1, nbMessage + 1).forEach(i -> m.put(i, new ConcurrentSkipListSet<>()));
@@ -49,32 +43,34 @@ public class ReliableBroadcast {
     }
 
     private boolean isReadyToDeliver(int nb) {
-        return nb == nbHosts - 1;
+        //TODO: Check if the +1 to take into account this process is correct
+        return nb + 1 > nbHosts / 2;
     }
 
     public void receive(int originId, int messageId, int sourceId) {
-        linkDelivered.get(originId).get(messageId).add(sourceId);
-
         ConcurrentMap<Integer, ConcurrentSkipListSet<Integer>> map = linkDelivered.get(originId);
         Set<Integer> set = map.get(messageId);
         set.add(sourceId);
 
+        //TODO: Think about response
         if (isReadyToDeliver(set.size())) {
             // Deliver this message
             broadcast.receive(originId, messageId);
         } else {
-            links.entrySet().parallelStream().filter(e -> {
-                int key = e.getKey();
-                return key != pid && !map.containsKey(key);
-            }).forEach(e -> {
-                e.getValue().send(originId, messageId, sourceId);
-            });
+            links.entrySet().parallelStream()
+                    .filter(e -> !map.containsKey(e.getKey()))
+                    .forEach(e -> e.getValue().send(originId, messageId, sourceId));
         }
     }
 
     public void broadcast(int messageId) {
-        links.entrySet().parallelStream().filter(e -> e.getKey() != pid).forEach(e -> {
+        links.entrySet().parallelStream().forEach(e -> {
             e.getValue().send(pid, messageId, pid);
         });
+    }
+
+    public void stop() {
+        socket.stop();
+        links.forEach((i, l) -> l.stop());
     }
 }

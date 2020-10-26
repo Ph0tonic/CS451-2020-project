@@ -15,8 +15,13 @@ public class FifoBroadcast {
 
     private FifoReceive fifoReceive;
 
-    public FifoBroadcast(int pid, int nbMessages, List<Host> hosts, FifoReceive fifoReceive) throws Exception {
-        reliableBroadcast = new ReliableBroadcast(pid, nbMessages, hosts, this);
+    public FifoBroadcast(int pid, int nbMessages, List<Host> hosts, FifoReceive fifoReceive) throws InterruptedException {
+        try {
+            reliableBroadcast = new ReliableBroadcast(pid, nbMessages, hosts, this);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new InterruptedException(e.getMessage());
+        }
         received = new ConcurrentHashMap<>();
         hosts.forEach(h -> received.put(h.getId(), new ConcurrentSkipListSet<>()));
         nextID = 1;
@@ -38,5 +43,9 @@ public class FifoBroadcast {
 
     public void broadcast(int messageId) {
         reliableBroadcast.broadcast(messageId);
+    }
+
+    public void stop() {
+        reliableBroadcast.stop();
     }
 }

@@ -18,7 +18,11 @@ ADD docker/apache-maven-3.6.3-bin.tar.gz /usr/local
 RUN ln -s /usr/local/apache-maven-3.6.3/bin/mvn /usr/local/bin
 COPY template_cpp /root/template_cpp
 COPY template_java /root/template_java
+COPY 308542 /root/308542
+COPY 308542_java /root/308542_java
 ADD barrier.py /root
+ADD finishedSignal.py /root
 
-RUN /root/template_cpp/build.sh && /root/template_cpp/cleanup.sh
-RUN /root/template_java/build.sh && /root/template_java/cleanup.sh
+# RUN /root/template_cpp/build.sh && /root/template_cpp/cleanup.sh
+# RUN /root/template_java/build.sh && /root/template_java/cleanup.sh
+RUN /root/308542_java/build.sh && /root/308542_java/cleanup.sh

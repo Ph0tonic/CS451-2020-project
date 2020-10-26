@@ -1,26 +1,25 @@
 package cs451;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
 class PerfectLink implements Runnable {
 
-    private BlockingQueue<Message> socketReceive;
+    private final BlockingQueue<Message> socketReceive;
 
-    private ConcurrentSkipListSet<Message> messagesToReceive;
+    private final ConcurrentSkipListSet<Message> messagesToReceive;
 
-    private int id;
-    private String ip;
-    private int port;
-
+    private final int id;
     private UdpSocket socket;
     private ReliableBroadcast broadcast;
 
+    private volatile boolean stop = false;
+
     public PerfectLink(Host host) {
         this.id = host.getId();
-        this.ip = host.getIp();
-        this.port = host.getPort();
 
         messagesToReceive = new ConcurrentSkipListSet<>();
         socketReceive = new LinkedBlockingQueue<>();
@@ -44,9 +43,12 @@ class PerfectLink implements Runnable {
     public void run() {
         // receive
         new Thread(() -> {
-            while (true) {
+            while (!stop) {
                 try {
                     Message message = socketReceive.take();
+                    if (stop) {
+                        return;
+                    }
                     if (message.ack) {
                         messagesToReceive.remove(message);
                     } else {
@@ -62,14 +64,21 @@ class PerfectLink implements Runnable {
 
         // send
         new Thread(() -> {
-            while (true) {
+            while (!stop) {
                 try {
                     Thread.sleep(500);
+                    if (stop) {
+                        return;
+                    }
                     messagesToReceive.parallelStream().forEach(socket::send);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    public void stop() {
+        stop = true;
     }
 }

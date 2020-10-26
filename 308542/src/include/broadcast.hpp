@@ -1,4 +1,5 @@
 #pragma once
+
 #include "parser.hpp"
 #include <pthread.h>
 #include <endian.h>

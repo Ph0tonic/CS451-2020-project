@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
   std::cout << "Broadcasting messages...\n\n";
   //TODO: Broadcast messages 
-  rbStart();
+  // rbStart();
 
   std::cout << "Signaling end of broadcasting messages\n\n";
   coordinator.finishedBroadcasting();

@@ -65,6 +65,7 @@ public class UdpSocket {
                     links.get(message.sourceId).receive(message);
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
+                    return;
                 }
             }
         }).start();
@@ -84,8 +85,13 @@ public class UdpSocket {
                     socket.send(packet);
                 } catch (InterruptedException | IOException e) {
                     e.printStackTrace();
+                    return;
                 }
             }
         }).start();
+    }
+
+    public void stop() {
+        socket.close();
     }
 }
