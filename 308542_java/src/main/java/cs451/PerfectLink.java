@@ -12,7 +12,7 @@ class PerfectLink implements Runnable {
 
     private final ConcurrentSkipListSet<Message> messagesToReceive;
 
-    private final int id;
+    private final int id; //destinationId
     private UdpSocket socket;
     private ReliableBroadcast broadcast;
 
@@ -35,7 +35,7 @@ class PerfectLink implements Runnable {
     }
 
     public void send(int originId, int messageId, int sourceId) {
-        Message message = new Message(sourceId, id, messageId, originId, false);
+        Message message = new Message(originId, messageId, sourceId, id, false);
         messagesToReceive.add(message);
         socket.send(message);
     }
@@ -51,6 +51,7 @@ class PerfectLink implements Runnable {
                     }
                     if (message.ack) {
                         messagesToReceive.remove(message);
+                        broadcast.receive(message.originId, message.messageId, message.destinationId);
                     } else {
                         message.ack = true;
                         socket.send(message);

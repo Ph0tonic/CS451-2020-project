@@ -9,7 +9,7 @@ public class Logger {
     private static Logger INSTANCE;
 
     public static synchronized Logger getInstance(String output){
-        if (INSTANCE != null) {
+        if (INSTANCE == null) {
             INSTANCE = new Logger(output);
         }
         return INSTANCE;
@@ -26,6 +26,7 @@ public class Logger {
     }
 
     public void log(String log){
+        System.out.println(log);
         logs.add(log);
     }
 

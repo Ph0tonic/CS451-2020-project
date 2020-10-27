@@ -1,8 +1,13 @@
 package cs451;
 
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -13,7 +18,7 @@ public class ReliableBroadcast {
     private int nbHosts;
 
     private Map<Integer, PerfectLink> links;
-
+    //TODO: Once working change into non concurrent has single threaded !
     private ConcurrentMap<Integer, ConcurrentMap<Integer, ConcurrentSkipListSet<Integer>>> linkDelivered; // originId -> messageId -> sourceId
     private FifoBroadcast broadcast;
 
@@ -48,18 +53,19 @@ public class ReliableBroadcast {
     }
 
     public void receive(int originId, int messageId, int sourceId) {
+        System.out.println("URB RECEIVE " + originId + " " + messageId + " " + sourceId);
         ConcurrentMap<Integer, ConcurrentSkipListSet<Integer>> map = linkDelivered.get(originId);
         Set<Integer> set = map.get(messageId);
         set.add(sourceId);
 
         //TODO: Think about response
-        if (isReadyToDeliver(set.size())) {
+        if (isReadyToDeliver(set.size()) && !isReadyToDeliver(set.size() - 1)) {
             // Deliver this message
             broadcast.receive(originId, messageId);
         } else {
             links.entrySet().parallelStream()
                     .filter(e -> !map.containsKey(e.getKey()))
-                    .forEach(e -> e.getValue().send(originId, messageId, sourceId));
+                    .forEach(e -> e.getValue().send(originId, messageId, pid));
         }
     }
 

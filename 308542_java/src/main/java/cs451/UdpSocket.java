@@ -33,10 +33,10 @@ public class UdpSocket {
 
         socketSend = new LinkedBlockingQueue<>();
 
-        baos = new ByteArrayOutputStream();
-        oos = new ObjectOutputStream(baos);
-        bais = new ByteArrayInputStream(null);
-        ois = new ObjectInputStream(bais);
+//        baos = new ByteArrayOutputStream();
+//        oos = new ObjectOutputStream(baos);
+//        bais = new ByteArrayInputStream(new byte[50960]);
+//        ois = new ObjectInputStream(bais);
 
         this.hosts = (HashMap<Integer, SocketAddress>) hosts
                 .stream()
@@ -58,11 +58,13 @@ public class UdpSocket {
                     DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length);
                     socket.receive(incomingPacket);
 
-                    bais.reset();
-                    bais.read(incomingPacket.getData());
+                    bais = new ByteArrayInputStream(incomingPacket.getData());
+//                    bais.reset();
+//                    bais.read(incomingPacket.getData());
 
+                    ois = new ObjectInputStream(bais);
                     Message message = (Message) ois.readObject();
-                    links.get(message.sourceId).receive(message);
+                    links.get(message.ack ? message.destinationId : message.sourceId).receive(message);
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                     return;
@@ -76,7 +78,10 @@ public class UdpSocket {
             while (true) {
                 try {
                     Message message = socketSend.take();
-                    baos.reset();
+
+                    baos = new ByteArrayOutputStream();
+                    oos = new ObjectOutputStream(baos);
+//                    baos.reset();
                     oos.writeObject(message);
 
                     byte[] serializedMessage = baos.toByteArray();

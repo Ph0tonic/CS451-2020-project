@@ -1,18 +1,16 @@
 package cs451;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class FifoBroadcast {
 
     private final ReliableBroadcast reliableBroadcast;
 
-    //originId -> messageId
-    private ConcurrentMap<Integer, ConcurrentSkipListSet<Integer>> received;
-    private volatile int nextID;
-
+    // originId -> messageId
+    private ConcurrentMap<Integer, MessageTracking> received;
     private FifoReceive fifoReceive;
 
     public FifoBroadcast(int pid, int nbMessages, List<Host> hosts, FifoReceive fifoReceive) throws InterruptedException {
@@ -23,22 +21,18 @@ public class FifoBroadcast {
             throw new InterruptedException(e.getMessage());
         }
         received = new ConcurrentHashMap<>();
-        hosts.forEach(h -> received.put(h.getId(), new ConcurrentSkipListSet<>()));
-        nextID = 1;
+        hosts.forEach(h -> received.put(h.getId(), new MessageTracking()));
         this.fifoReceive = fifoReceive;
     }
 
     public synchronized void receive(int originId, int messageId) {
-        ConcurrentSkipListSet<Integer> set = received.get(originId);
-        boolean found = nextID == originId;
-        do {
-            if (found) {
-                this.fifoReceive.receive(originId, messageId);
-            } else {
-                nextID++;
-                found = set.contains(nextID);
-            }
-        } while (found);
+        System.out.println("FIFO RECEIVE " + originId + " " + messageId);
+        MessageTracking tracking = received.get(originId);
+        tracking.received.add(messageId);
+        while (tracking.received.contains(tracking.nextId)) {
+            this.fifoReceive.receive(originId, tracking.nextId);
+            tracking.nextId++;
+        }
     }
 
     public void broadcast(int messageId) {
@@ -47,5 +41,11 @@ public class FifoBroadcast {
 
     public void stop() {
         reliableBroadcast.stop();
+    }
+
+    //TODO: Change into non-concurrent once ok
+    private static class MessageTracking {
+        public int nextId = 1;
+        public ConcurrentSkipListSet<Integer> received = new ConcurrentSkipListSet<>();
     }
 }
