@@ -1,15 +1,9 @@
 package cs451;
 
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class ReliableBroadcast {
     private final UdpSocket socket;
@@ -17,9 +11,9 @@ public class ReliableBroadcast {
 
     private int nbHosts;
 
-    private Map<Integer, PerfectLink> links;
+    private PerfectLink[] links;
     //TODO: Once working change into non concurrent has single threaded !
-    private ConcurrentMap<Integer, ConcurrentMap<Integer, ConcurrentSkipListSet<Integer>>> linkDelivered; // originId -> messageId -> sourceId
+    private HashSet[][] linkDelivered; // originId -> messageId -> sourceId
     private FifoBroadcast broadcast;
 
     public ReliableBroadcast(int pid, int nbMessage, List<Host> hosts, FifoBroadcast broadcast) throws Exception {
@@ -33,18 +27,29 @@ public class ReliableBroadcast {
         }
 
         // Init socket and links
-        this.links = hosts.stream().filter(e -> e.getId() != pid).collect(Collectors.toMap(Host::getId, PerfectLink::new));
-        this.socket = new UdpSocket(host.get().getIp(), host.get().getPort(), links, hosts);
+        this.links = new PerfectLink[nbHosts];
+        this.socket = new UdpSocket(host.get().getIp(), host.get().getPort(), this.links, hosts);
 
-        // Start perfectLinks
-        this.links.forEach((Integer id, PerfectLink l) -> l.init(socket, this));
-        this.links.forEach((i, p) -> new Thread(p).start());
+        for (var h : hosts) {
+            if (h.getId() != pid) {
+                // Create and start perfect links
+                links[h.getId() - 1] = new PerfectLink(h);
+                links[h.getId() - 1].init(socket, this);
+                // TODO: Change this to be a pool of thread !!!!!!!!!!
+                new Thread(links[h.getId() - 1]).start();
+            } else {
+                links[h.getId() - 1] = null;
+            }
+        }
 
-        linkDelivered = new ConcurrentHashMap<>();
-        hosts.forEach(h -> linkDelivered.put(h.getId(), new ConcurrentHashMap<>()));
-        linkDelivered.forEach((o, m) -> {
-            IntStream.range(1, nbMessage + 1).forEach(i -> m.put(i, new ConcurrentSkipListSet<>()));
-        });
+        // Initialise data structure
+        linkDelivered = new HashSet[nbHosts][nbMessage];
+        for (int i = 0; i < linkDelivered.length; i++) {
+            linkDelivered[i] = new HashSet[nbMessage];
+            for (int j = 0; j < linkDelivered[i].length; j++) {
+                linkDelivered[i][j] = new HashSet();
+            }
+        }
     }
 
     private boolean isReadyToDeliver(int nb) {
@@ -54,8 +59,7 @@ public class ReliableBroadcast {
 
     public void receive(int originId, int messageId, int sourceId) {
         System.out.println("URB RECEIVE " + originId + " " + messageId + " " + sourceId);
-        ConcurrentMap<Integer, ConcurrentSkipListSet<Integer>> map = linkDelivered.get(originId);
-        Set<Integer> set = map.get(messageId);
+        var set = linkDelivered[originId - 1][messageId - 1];
         set.add(sourceId);
 
         //TODO: Think about response
@@ -63,20 +67,28 @@ public class ReliableBroadcast {
             // Deliver this message
             broadcast.receive(originId, messageId);
         } else {
-            links.entrySet().parallelStream()
-                    .filter(e -> !map.containsKey(e.getKey()))
-                    .forEach(e -> e.getValue().send(originId, messageId, pid));
+            for (int i = 0; i < links.length; i++) {
+                if (i + 1 != pid && !linkDelivered[originId - 1][messageId - 1].contains(i + 1)) {
+                    links[i + 1].send(originId, messageId, pid);
+                }
+            }
         }
     }
 
     public void broadcast(int messageId) {
-        links.entrySet().parallelStream().forEach(e -> {
-            e.getValue().send(pid, messageId, pid);
-        });
+        for (var l : links) {
+            if (l != null) {
+                l.send(pid, messageId, pid);
+            }
+        }
     }
 
     public void stop() {
         socket.stop();
-        links.forEach((i, l) -> l.stop());
+        for (var l : links) {
+            if (l != null) {
+                l.stop();
+            }
+        }
     }
 }

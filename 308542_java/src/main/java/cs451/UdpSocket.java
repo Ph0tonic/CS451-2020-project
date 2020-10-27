@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.*;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -17,13 +16,13 @@ public class UdpSocket {
     private ObjectInputStream ois;
 
     private DatagramSocket socket;
-    private Map<Integer, PerfectLink> links;
+    private PerfectLink[] links;
 
     private BlockingQueue<Message> socketSend;
 
     private HashMap<Integer, SocketAddress> hosts;
 
-    public UdpSocket(String ip, int port, Map<Integer, PerfectLink> links, List<Host> hosts) throws IOException {
+    public UdpSocket(String ip, int port, PerfectLink[] links, List<Host> hosts) throws IOException {
         this.links = links;
         try {
             this.socket = new DatagramSocket(port);
@@ -64,7 +63,7 @@ public class UdpSocket {
 
                     ois = new ObjectInputStream(bais);
                     Message message = (Message) ois.readObject();
-                    links.get(message.ack ? message.destinationId : message.sourceId).receive(message);
+                    links[(message.ack ? message.destinationId : message.sourceId)-1].receive(message);
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                     return;
