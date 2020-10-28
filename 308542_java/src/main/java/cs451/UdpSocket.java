@@ -1,12 +1,13 @@
 package cs451;
 
 import java.io.*;
-import java.net.*;
-import java.util.HashMap;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collectors;
 
 public class UdpSocket {
 
@@ -20,9 +21,9 @@ public class UdpSocket {
 
     private BlockingQueue<Message> socketSend;
 
-    private HashMap<Integer, SocketAddress> hosts;
+    private SocketAddress[] hosts;
 
-    public UdpSocket(String ip, int port, PerfectLink[] links, List<Host> hosts) throws IOException {
+    public UdpSocket(String ip, int port, PerfectLink[] links, List<Host> hosts) {
         this.links = links;
         try {
             this.socket = new DatagramSocket(port);
@@ -37,9 +38,8 @@ public class UdpSocket {
 //        bais = new ByteArrayInputStream(new byte[50960]);
 //        ois = new ObjectInputStream(bais);
 
-        this.hosts = (HashMap<Integer, SocketAddress>) hosts
-                .stream()
-                .collect(Collectors.toMap(Host::getId, h -> (SocketAddress) new InetSocketAddress(h.getIp(), h.getPort())));
+        this.hosts = new SocketAddress[hosts.size()];
+        hosts.forEach(h -> this.hosts[h.getId() - 1] = new InetSocketAddress(h.getIp(), h.getPort()));
 
         listener();
         sender();
@@ -63,7 +63,7 @@ public class UdpSocket {
 
                     ois = new ObjectInputStream(bais);
                     Message message = (Message) ois.readObject();
-                    links[(message.ack ? message.destinationId : message.sourceId)-1].receive(message);
+                    links[(message.ack ? message.destinationId : message.sourceId) - 1].receive(message);
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                     return;
@@ -85,7 +85,7 @@ public class UdpSocket {
 
                     byte[] serializedMessage = baos.toByteArray();
                     int destinationId = message.ack ? message.sourceId : message.destinationId;
-                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, hosts.get(destinationId));
+                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, hosts[destinationId-1]);
                     socket.send(packet);
                 } catch (InterruptedException | IOException e) {
                     e.printStackTrace();

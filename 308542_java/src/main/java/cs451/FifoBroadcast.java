@@ -1,8 +1,6 @@
 package cs451;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class FifoBroadcast {
@@ -10,7 +8,7 @@ public class FifoBroadcast {
     private final ReliableBroadcast reliableBroadcast;
 
     // originId -> messageId
-    private ConcurrentMap<Integer, MessageTracking> received;
+    private MessageTracking[] received;
     private FifoReceive fifoReceive;
 
     public FifoBroadcast(int pid, int nbMessages, List<Host> hosts, FifoReceive fifoReceive) throws InterruptedException {
@@ -20,14 +18,14 @@ public class FifoBroadcast {
             e.printStackTrace();
             throw new InterruptedException(e.getMessage());
         }
-        received = new ConcurrentHashMap<>();
-        hosts.forEach(h -> received.put(h.getId(), new MessageTracking()));
+        received = new MessageTracking[hosts.size()];
+        hosts.forEach(h -> received[h.getId() - 1] = new MessageTracking());
         this.fifoReceive = fifoReceive;
     }
 
     public synchronized void receive(int originId, int messageId) {
         System.out.println("FIFO RECEIVE " + originId + " " + messageId);
-        MessageTracking tracking = received.get(originId);
+        MessageTracking tracking = received[originId - 1];
         tracking.received.add(messageId);
         while (tracking.received.contains(tracking.nextId)) {
             this.fifoReceive.receive(originId, tracking.nextId);

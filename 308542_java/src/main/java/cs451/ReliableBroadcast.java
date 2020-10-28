@@ -12,7 +12,7 @@ public class ReliableBroadcast {
     private int nbHosts;
 
     private PerfectLink[] links;
-    //TODO: Once working change into non concurrent has single threaded !
+    //TODO: Once working change into non concurrent has single threaded ! TODO: check really non-multithreaded
     private HashSet[][] linkDelivered; // originId -> messageId -> sourceId
     private FifoBroadcast broadcast;
 
