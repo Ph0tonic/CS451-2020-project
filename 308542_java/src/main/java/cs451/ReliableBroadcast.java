@@ -11,7 +11,7 @@ public class ReliableBroadcast {
 
     private int nbHosts;
 
-    private PerfectLink[] links;
+    private PerfectLinks links;
     //TODO: Once working change into non concurrent has single threaded ! TODO: check really non-multithreaded
     private HashSet[][] linkDelivered; // originId -> messageId -> sourceId
     private FifoBroadcast broadcast;
@@ -27,20 +27,9 @@ public class ReliableBroadcast {
         }
 
         // Init socket and links
-        this.links = new PerfectLink[nbHosts];
+        this.links = new PerfectLinks(hosts, 6);
         this.socket = new UdpSocket(host.get().getIp(), host.get().getPort(), this.links, hosts);
-
-        for (var h : hosts) {
-            if (h.getId() != pid) {
-                // Create and start perfect links
-                links[h.getId() - 1] = new PerfectLink(h);
-                links[h.getId() - 1].init(socket, this);
-                // TODO: Change this to be a pool of thread !!!!!!!!!!
-                new Thread(links[h.getId() - 1]).start();
-            } else {
-                links[h.getId() - 1] = null;
-            }
-        }
+        this.links.init(socket, this);
 
         // Initialise data structure
         linkDelivered = new HashSet[nbHosts][nbMessage];
@@ -67,28 +56,24 @@ public class ReliableBroadcast {
             // Deliver this message
             broadcast.receive(originId, messageId);
         } else {
-            for (int i = 0; i < links.length; i++) {
+            for (int i = 0; i < nbHosts; i++) {
                 if (i + 1 != pid && !linkDelivered[originId - 1][messageId - 1].contains(i + 1)) {
-                    links[i + 1].send(originId, messageId, pid);
+                    links.send(originId, messageId, pid, i + 1);
                 }
             }
         }
     }
 
     public void broadcast(int messageId) {
-        for (var l : links) {
-            if (l != null) {
-                l.send(pid, messageId, pid);
+        for (int i = 0; i < nbHosts; i++) {
+            if (i + 1 != pid) {
+                links.send(pid, messageId, pid, i + 1);
             }
         }
     }
 
     public void stop() {
         socket.stop();
-        for (var l : links) {
-            if (l != null) {
-                l.stop();
-            }
-        }
+        links.stop();
     }
 }

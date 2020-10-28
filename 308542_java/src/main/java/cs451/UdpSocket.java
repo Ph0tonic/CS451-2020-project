@@ -1,29 +1,26 @@
 package cs451;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class UdpSocket {
 
-    private ByteArrayOutputStream baos;
-    private ObjectOutputStream oos;
-    private ByteArrayInputStream bais;
-    private ObjectInputStream ois;
-
+    private final PerfectLinks links;
+    private final BlockingQueue<Message> socketSend;
+    private final ByteBuffer inputData = ByteBuffer.allocate(8192).order(ByteOrder.nativeOrder());
+    private final ByteBuffer outputData = ByteBuffer.allocate(8192).order(ByteOrder.nativeOrder());
+    private final DatagramPacket inputDatagram;
+    private final DatagramPacket[] outputDatagrams;
     private DatagramSocket socket;
-    private PerfectLink[] links;
 
-    private BlockingQueue<Message> socketSend;
-
-    private SocketAddress[] hosts;
-
-    public UdpSocket(String ip, int port, PerfectLink[] links, List<Host> hosts) {
+    public UdpSocket(String ip, int port, PerfectLinks links, List<Host> hosts) {
         this.links = links;
         try {
             this.socket = new DatagramSocket(port);
@@ -31,40 +28,35 @@ public class UdpSocket {
             System.out.println("I/O error: " + ex.getMessage());
         }
 
+        inputDatagram = new DatagramPacket(inputData.array(), 0, new InetSocketAddress(ip, port));
+
         socketSend = new LinkedBlockingQueue<>();
 
-//        baos = new ByteArrayOutputStream();
-//        oos = new ObjectOutputStream(baos);
-//        bais = new ByteArrayInputStream(new byte[50960]);
-//        ois = new ObjectInputStream(bais);
+        outputDatagrams = new DatagramPacket[hosts.size()];
+        hosts.forEach(h -> outputDatagrams[h.getId() - 1] = new DatagramPacket(outputData.array(), 0, new InetSocketAddress(h.getIp(), h.getPort())));
 
-        this.hosts = new SocketAddress[hosts.size()];
-        hosts.forEach(h -> this.hosts[h.getId() - 1] = new InetSocketAddress(h.getIp(), h.getPort()));
-
-        listener();
-        sender();
+        startListener();
+        startSender();
     }
 
     public void send(Message message) {
         socketSend.add(message);
     }
 
-    private void listener() {
+    private void startListener() {
         new Thread(() -> {
-            byte[] incomingData = new byte[1024];
             while (true) {
                 try {
-                    DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length);
-                    socket.receive(incomingPacket);
+                    inputData.reset();
+                    socket.receive(inputDatagram);
+                    boolean ack = inputData.getInt() == 1;
+                    int destinationId = inputData.getInt();
+                    int sourceId = inputData.getInt();
+                    int messageId = inputData.getInt();
+                    int originId = inputData.getInt();
 
-                    bais = new ByteArrayInputStream(incomingPacket.getData());
-//                    bais.reset();
-//                    bais.read(incomingPacket.getData());
-
-                    ois = new ObjectInputStream(bais);
-                    Message message = (Message) ois.readObject();
-                    links[(message.ack ? message.destinationId : message.sourceId) - 1].receive(message);
-                } catch (IOException | ClassNotFoundException e) {
+                    links.receive(new Message(originId, messageId, sourceId, destinationId, ack));
+                } catch (IOException e) {
                     e.printStackTrace();
                     return;
                 }
@@ -72,20 +64,21 @@ public class UdpSocket {
         }).start();
     }
 
-    private void sender() {
+    private void startSender() {
         new Thread(() -> {
             while (true) {
                 try {
                     Message message = socketSend.take();
+                    outputData.clear();
+                    outputData.putInt(message.originId);
+                    outputData.putInt(message.messageId);
+                    outputData.putInt(message.sourceId);
+                    outputData.putInt(message.destinationId);
+                    outputData.putInt(message.ack ? 1 : 0);
 
-                    baos = new ByteArrayOutputStream();
-                    oos = new ObjectOutputStream(baos);
-//                    baos.reset();
-                    oos.writeObject(message);
-
-                    byte[] serializedMessage = baos.toByteArray();
                     int destinationId = message.ack ? message.sourceId : message.destinationId;
-                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length, hosts[destinationId-1]);
+                    DatagramPacket packet = outputDatagrams[destinationId - 1];
+                    packet.setData(outputData.array(), 0, outputData.position());
                     socket.send(packet);
                 } catch (InterruptedException | IOException e) {
                     e.printStackTrace();
