@@ -10,18 +10,21 @@ class PerfectLinks {
 
     private final ConcurrentSkipListSet<Message>[] messagesToReceives;
     public int nbReceivers;
+    public int nbHosts;
 
     private UdpSocket socket;
     private ReliableBroadcast broadcast;
     private volatile boolean stop = false;
 
     public PerfectLinks(List<Host> hosts, int nbThread) {
-        this.nbReceivers = nbThread - 1;
+        nbReceivers = nbThread - 1;
+        nbHosts = hosts.size();
 
-        messagesToReceives = new ConcurrentSkipListSet[hosts.size()];
+        messagesToReceives = new ConcurrentSkipListSet[nbHosts];
         hosts.forEach(h -> messagesToReceives[h.getId() - 1] = new ConcurrentSkipListSet<>());
-        socketReceive = new LinkedBlockingQueue[nbThread];
-        for (int i = 0; i < nbThread; ++i) {
+
+        socketReceive = new LinkedBlockingQueue[nbReceivers];
+        for (int i = 0; i < nbReceivers; ++i) {
             socketReceive[i] = new LinkedBlockingQueue<>();
         }
 
@@ -40,7 +43,7 @@ class PerfectLinks {
                             return;
                         }
                         if (message.ack) {
-                            messagesToReceives[message.destinationId].remove(message);
+                            messagesToReceives[message.destinationId-1].remove(message);
                             broadcast.receive(message.originId, message.messageId, message.destinationId);
                         } else {
                             message.ack = true;
@@ -64,7 +67,7 @@ class PerfectLinks {
                         return;
                     }
                     // TODO: Think about how to resend with the less impact -> maybe only one thread
-                    for (int i = 0; i < this.nbReceivers; ++i) {
+                    for (int i = 0; i < this.nbHosts; ++i) {
                         messagesToReceives[i].stream().forEach(socket::send);
                     }
                 } catch (InterruptedException e) {

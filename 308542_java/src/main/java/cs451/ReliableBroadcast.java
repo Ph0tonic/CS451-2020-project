@@ -47,7 +47,6 @@ public class ReliableBroadcast {
     }
 
     public void receive(int originId, int messageId, int sourceId) {
-        System.out.println("URB RECEIVE " + originId + " " + messageId + " " + sourceId);
         var set = linkDelivered[originId - 1][messageId - 1];
         set.add(sourceId);
 

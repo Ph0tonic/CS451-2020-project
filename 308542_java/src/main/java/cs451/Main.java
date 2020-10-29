@@ -1,19 +1,19 @@
 package cs451;
 
-import java.io.*;
-import java.net.Socket;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Scanner;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.IntStream;
 
 public class Main {
 
+    private static FifoBroadcast broadcast;
+
     private static void handleSignal() {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
-        if(broadcast != null){
+        if (broadcast != null) {
             broadcast.stop();
         }
 
@@ -30,7 +30,6 @@ public class Main {
             }
         });
     }
-    private static FifoBroadcast broadcast;
 
     public static void main(String[] args) throws InterruptedException {
         Parser parser = new Parser(args);
@@ -80,21 +79,22 @@ public class Main {
 
         broadcast = new FifoBroadcast(parser.myId(), nbMessages, parser.hosts(), (originId, messageId) -> {
             latch.countDown();
-            logger.log("d " + originId + " " + messageId);
         });
 
         System.out.println("Waiting for all links for finish initialization");
         coordinator.waitOnBarrier();
+        long startTime = System.nanoTime();
 
         System.out.println("Broadcasting messages...");
         IntStream.range(1, nbMessages + 1).forEach(i -> {
             broadcast.broadcast(i);
-            logger.log("b " + i);
         });
         latch.await();
 
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
+        long endTime = System.nanoTime();
+        System.out.println("Escaped time : " + (endTime - startTime) / 1000000 + "[ms]");
 
         logger.dump();
 

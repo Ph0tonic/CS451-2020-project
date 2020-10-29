@@ -24,7 +24,6 @@ public class FifoBroadcast {
     }
 
     public synchronized void receive(int originId, int messageId) {
-        System.out.println("FIFO RECEIVE " + originId + " " + messageId);
         MessageTracking tracking = received[originId - 1];
         tracking.received.add(messageId);
         while (tracking.received.contains(tracking.nextId)) {
