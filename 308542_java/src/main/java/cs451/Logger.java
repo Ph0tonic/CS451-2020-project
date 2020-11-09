@@ -26,8 +26,8 @@ public class Logger {
     }
 
     public void log(String log){
-        System.out.println(log);
-        logs.add(log);
+        // System.out.println(log); //TODO: Comment this line for final release
+        // logs.add(log);
     }
 
     public void dump() {
