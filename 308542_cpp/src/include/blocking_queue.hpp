@@ -9,29 +9,26 @@
 
 #include "message.hpp"
 
-class BlockingQueue
-{
+class BlockingQueue {
 private:
     std::mutex d_mutex;
     std::condition_variable d_condition;
-    std::deque<struct message*> d_queue;
+    std::deque<Message *> d_queue;
 
 public:
-    void push(struct message *value)
-    {
+    void push(Message *value) {
         {
-            std::unique_lock<std::mutex> lock(this->d_mutex);
+            std::unique_lock <std::mutex> lock(this->d_mutex);
             d_queue.push_front(value);
         }
         this->d_condition.notify_one();
     }
 
-    struct message *pop()
-    {
-        std::unique_lock<std::mutex> lock(this->d_mutex);
+    Message *pop() {
+        std::unique_lock <std::mutex> lock(this->d_mutex);
         this->d_condition.wait(lock, [=] { return !this->d_queue.empty(); });
-        struct message* rc(std::move(this->d_queue.back()));
+        Message *msg = this->d_queue.back();
         this->d_queue.pop_back();
-        return rc;
+        return msg;
     }
 };

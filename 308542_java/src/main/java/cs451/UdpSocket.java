@@ -7,34 +7,28 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class UdpSocket {
 
+    private static final int HEADER_SIZE = 8;
+    private static final int BUFFER_SIZE = HEADER_SIZE + 5000;
+
     private final UdpSocketReceive receiver;
     private final BlockingQueue<Message> socketSend;
-    private final ByteBuffer outputData = ByteBuffer.allocate(32).order(ByteOrder.BIG_ENDIAN);
+    private final ByteBuffer outputData = ByteBuffer.allocate(BUFFER_SIZE).order(ByteOrder.BIG_ENDIAN);
     private final DatagramPacket inputDatagram;
     private final DatagramPacket[] outputDatagrams;
-    private final InetSocketAddress[] addresses;
-    private ByteBuffer inputData = ByteBuffer.allocate(32).order(ByteOrder.nativeOrder());
+    private ByteBuffer inputData;
     private DatagramSocket socket;
 
     //TODO: remove
     private volatile boolean close;
-    private List<Host> hosts;
 
     public UdpSocket(String ip, int port, UdpSocketReceive receiver, List<Host> hosts) {
-        // try {
-        //     Process process = Runtime.getRuntime().exec("sysctl -w net.core.rmem_max=20000000", null, null);
-        //     process.waitFor();
-        //     System.out.println();
-        // } catch (IOException | InterruptedException e) {
-        //     System.out.println("Process Error : " + e);
-        // }
-        this.hosts = hosts;
         this.receiver = receiver;
         try {
             this.socket = new DatagramSocket(port);
@@ -44,24 +38,16 @@ public class UdpSocket {
             System.out.println("Socket Error : " + e);
         }
 
-        inputDatagram = new DatagramPacket(new byte[20000], 20000, new InetSocketAddress(ip, port));
-        inputData = ByteBuffer.wrap(inputDatagram.getData(), 0, 20000);
+        inputDatagram = new DatagramPacket(new byte[BUFFER_SIZE], BUFFER_SIZE, new InetSocketAddress(ip, port));
+        inputData = ByteBuffer.wrap(inputDatagram.getData(), 0, BUFFER_SIZE);
 
         socketSend = new LinkedBlockingQueue<>();
 
         outputDatagrams = new DatagramPacket[hosts.size()];
         hosts.forEach(h -> outputDatagrams[h.getId() - 1] = new DatagramPacket(outputData.array(), 0, new InetSocketAddress(h.getIp(), h.getPort())));
 
-        addresses = new InetSocketAddress[hosts.size()];
-        hosts.forEach(h -> addresses[h.getId() - 1] = new InetSocketAddress(h.getIp(), h.getPort()));
-
         startListener();
         startSender();
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     public void send(Message message) {
@@ -74,23 +60,24 @@ public class UdpSocket {
                 try {
                     socket.receive(inputDatagram);
                     inputData = ByteBuffer.wrap(inputDatagram.getData(), inputDatagram.getOffset(), inputDatagram.getLength());
-
                     inputData.clear();
 
-                    int originId = inputData.getInt();
+                    int originId = inputData.get();
                     int messageId = inputData.getInt();
-                    int sourceId = inputData.getInt();
-                    int destinationId = inputData.getInt();
-                    boolean ack = inputData.getInt() == 1;
+                    int sourceId = inputData.get();
+                    int destinationId = inputData.get();
+                    boolean ack = inputData.get() == 1;
+                    byte[] data = null;
+                    if (!ack) {
+                        data = Arrays.copyOfRange(inputData.array(), HEADER_SIZE, inputDatagram.getLength());
+                    }
 
-                    receiver.receive(new Message(originId, messageId, sourceId, destinationId, ack));
+                    receiver.receive(new Message(originId, messageId, sourceId, destinationId, ack, 0, data));
                 } catch (IOException e) {
-                    System.out.println("DONE LISTENING EXC !!!");
-                    e.printStackTrace();
+                    System.out.println("Close socket");
                     return;
                 }
             }
-            System.out.println("DONE LISTENING !!!");
         }).start();
     }
 
@@ -100,11 +87,14 @@ public class UdpSocket {
                 try {
                     Message message = socketSend.take();
                     outputData.clear();
-                    outputData.putInt(message.originId);
+                    outputData.put((byte) message.originId);
                     outputData.putInt(message.messageId);
-                    outputData.putInt(message.sourceId);
-                    outputData.putInt(message.destinationId);
-                    outputData.putInt(message.ack ? 1 : 0);
+                    outputData.put((byte) message.sourceId);
+                    outputData.put((byte) message.destinationId);
+                    outputData.put((byte) (message.ack ? 1 : 0));
+                    if (!message.ack) {
+                        outputData.put(message.data);
+                    }
 
                     int destinationId = message.ack ? message.sourceId : message.destinationId;
                     DatagramPacket packet = outputDatagrams[destinationId - 1];
@@ -112,12 +102,10 @@ public class UdpSocket {
 
                     socket.send(packet);
                 } catch (InterruptedException | IOException e) {
-                    System.out.println("DONE SENDING !!! exc");
-                    e.printStackTrace();
+                    System.out.println("Close socket");
                     return;
                 }
             }
-            System.out.println("DONE SENDING !!!");
         }).start();
     }
 

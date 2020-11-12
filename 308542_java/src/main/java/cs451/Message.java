@@ -9,13 +9,19 @@ public class Message implements Serializable, Comparable<Message> {
     int originId;
     int messageId;
     boolean ack;
+    long time;
+    int count;
+    byte[] data;
 
-    public Message(int originId, int messageId, int sourceId, int destinationId, boolean ack) {
+    public Message(int originId, int messageId, int sourceId, int destinationId, boolean ack, long time, byte[] data) {
         this.originId = originId;
         this.messageId = messageId;
         this.sourceId = sourceId;
         this.destinationId = destinationId;
         this.ack = ack;
+        this.time = time;
+        this.count = 1;
+        this.data = data;
     }
 
     @Override

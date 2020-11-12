@@ -11,127 +11,153 @@
 
 #include "parser.hpp"
 #include "blocking_queue.hpp"
+#include "udp_socket.hpp"
+#include "message.hpp"
 
 #define BUFFER_SIZE sizeof(int8_t) * 4 + sizeof(uint32_t)
 
-struct message
-{
-    uint32_t message_id;
-    uint8_t source_id;
-    uint8_t destination_id;
-    uint8_t origin_id;
-    bool ack;
-};
-
-struct packet
-{
+struct Packet {
     char buffer[BUFFER_SIZE];
 };
 
-struct packet *encode_message(message *m)
-{
-    packet *p = (packet *)malloc(sizeof(packet));
-    uint8_t ack = m->ack;
-    memcpy(p->buffer, &ack, sizeof(uint8_t));
-    memcpy(p->buffer + sizeof(uint8_t), &m->source_id, sizeof(uint8_t));
-    memcpy(p->buffer + 2 * sizeof(uint8_t), &m->destination_id, sizeof(uint8_t));
-    memcpy(p->buffer + 3 * sizeof(uint8_t), &m->origin_id, sizeof(uint8_t));
-    memcpy(p->buffer + 4 * sizeof(uint8_t), &m->message_id, sizeof(uint32_t));
-    return p;
-}
+class UdpSocketDeliver {
+public:
+    virtual void deliver(Message *msg) = 0;
+};
 
-struct message *decode_packet(packet *p)
-{
-    message *m = (message *)malloc(sizeof(message));
-    uint8_t ack = 0;
-    memcpy(&ack, p->buffer, sizeof(uint8_t));
-    memcpy(&m->source_id, p->buffer + sizeof(uint8_t), sizeof(uint8_t));
-    memcpy(&m->destination_id, p->buffer + 2 * sizeof(uint8_t), sizeof(uint8_t));
-    memcpy(&m->origin_id, p->buffer + 3 * sizeof(uint8_t), sizeof(uint8_t));
-    memcpy(&m->message_id, p->buffer + 4 * sizeof(uint8_t), sizeof(uint32_t));
-    m->ack = ack;
-    return m;
-}
-
-class UdpSocket
-{
+class UdpSocket {
 private:
-    BlockingQueue sendingQueue;
+    BlockingQueue *sendingQueue;
 
-    std::map<int, PerfectLink*> links;
-    std::map<uint8_t, struct sockaddr_in> hosts;
+    UdpSocketDeliver *receiver;
+    struct sockaddr_in *hosts;
 
     int sockfd;
     struct sockaddr_in server;
-    size_t lenServer;
+    struct sockaddr_in *addresses;
+
+    socklen_t lenServer;
+    volatile bool stopped;
+
+    std::thread *thread_sender;
+    std::thread *thread_listener;
 
 public:
-    UdpSocket(struct Host host, std::vector<struct Host>)
-    {
+    UdpSocket(const Parser::Host host, std::vector <Parser::Host> hosts, UdpSocketDeliver *receiver) :
+            receiver(receiver) {
         createSocket(host.ip, host.port);
+        stopped = false;
+        sendingQueue = new BlockingQueue();
+
+        int nbHost = static_cast<int>(hosts.size());
+        addresses = new struct sockaddr_in[nbHost];
+        for (auto const &h: hosts) {
+            uint8_t i = h.id & 0xff;
+            std::cout << "Init address for " << i - 1 << std::endl;
+            addresses[i - 1].sin_family = AF_INET;
+            addresses[i - 1].sin_addr.s_addr = h.ip;
+            addresses[i - 1].sin_port = htons(h.port);
+        }
+
         startThreads();
     }
 
-    ~UdpSocket()
-    {
+    ~UdpSocket() {
+        delete sendingQueue;
+        thread_sender->join();
+        thread_listener->join();
+        delete thread_sender;
+        delete thread_listener;
     }
 
-    void send(struct message *msg)
-    {
-        //TODO: Send message
-        sendingQueue.push(msg);
+    void send(Message *msg) {
+        sendingQueue->push(msg);
+    }
+
+    void stop() {
+        stopped = true;
     }
 
 private:
-    void startThreads()
-    {
+    void startThreads() {
         // Sender
-        auto sender = [](UdpSocket *socket) {
+        auto sender = [](UdpSocket *socket) noexcept {
+
             // TODO: Choose what is the max size
             char buffer[BUFFER_SIZE];
 
-            sockaddr_in cliaddr;
-            socklen_t len = sizeof(cliaddr);
-
             // Do Something
-            while (true)
-            {
+            while (!socket->stopped) {
+                Message *message = socket->sendingQueue->pop();
+
+                if (socket->stopped) {
+                    perror("Stop udp socket sender");
+                    return;
+                }
+
+                uint8_t destinationId = message->ack ? message->source_id : message->destination_id;
+
+                Packet *packet = socket->encode_message(message);
+                std::cout << "Message to send : " << unsigned(message->origin_id) << " "
+                          << unsigned(message->message_id) << " "
+                          << unsigned(message->source_id) << " " << unsigned(message->destination_id) << " "
+                          << message->ack << " " << std::endl;
+
+                std::cout << "Send message to " << socket->addresses[destinationId - 1].sin_port << std::endl;
+                long int n = sendto(socket->sockfd, packet->buffer, BUFFER_SIZE, 0,
+                                    reinterpret_cast<struct sockaddr *>(&socket->addresses[destinationId - 1]),
+                                    sizeof(socket->addresses[destinationId - 1]));
+
+                if (n < 0) {
+                    std::cout << "ERROR Sending message " << n << std::endl;
+                    close(socket->sockfd);
+                    perror("Cannot send message but why ???");
+                    return;
+                }
+                delete packet;
             }
         };
 
         // Listener
-        auto listener = [](UdpSocket *socket) {
-            // TODO: Choose what is the max size
-            struct packet packet;
+        auto listener = [](UdpSocket *socket) noexcept {
+            std::cout << "UDP SOCKET LISTENER" << std::endl;
 
-            while (true)
-            {
+            // TODO: Choose what is the max size
+            Packet *packet = new Packet();
+
+            while (!socket->stopped) {
                 // WAIT_ALL wait for all bytes to arrive
-                size_t n = recvfrom(socket->sockfd, packet.buffer, BUFFER_SIZE,
-                                    MSG_WAITALL, (struct sockaddr *)&socket->server,
-                                    (socklen_t *)&socket->lenServer);
-                if (n == 0)
-                {
-                    //TODO: Socket closed
+                size_t n = recvfrom(socket->sockfd, packet->buffer, BUFFER_SIZE,
+                                    MSG_WAITALL, reinterpret_cast<struct sockaddr *>(&socket->server),
+                                    &socket->lenServer);
+
+                if (n == 0 || socket->stopped) {
+                    perror("Stop udp socket listener error ?");
+                    return; // Socket closed
                 }
 
                 // Decode message
-                struct message* msg = decode_packet(&packet);
+                Message *message = socket->decode_packet(packet);
+                std::cout << "Message received : " << unsigned(message->origin_id) << " "
+                          << unsigned(message->message_id) << " "
+                          << unsigned(message->source_id) << " " << unsigned(message->destination_id) << " "
+                          << message->ack << " " << std::endl;
 
-                socket->links[msg->ack ? msg->source_id : msg->destination_id]->receive(msg);
+                socket->receiver->deliver(message);
             }
+            perror("Stop udp socket listener ?");
         };
 
-        std::thread thread_sender(sender, this);
-        std::thread thread_listener(listener, this);
+        std::cout << "Create UDP threads" << std::endl;
+        thread_sender = new std::thread(sender, this);
+        thread_listener = new std::thread(listener, this);
+        std::cout << "Done creating UDP threads" << std::endl;
     }
 
-    void createSocket(in_addr_t address, short port)
-    {
+    void createSocket(in_addr_t address, short port) {
         // Create UDP socket
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-        if (sockfd < 0)
-        {
+        if (sockfd < 0) {
             perror("socket creation failed");
             exit(EXIT_FAILURE);
         }
@@ -146,10 +172,32 @@ private:
         lenServer = sizeof(server);
 
         // Bind the socket with the server address
-        if (bind(sockfd, reinterpret_cast<struct sockaddr *>(&server), lenServer) < 0)
-        {
+        if (bind(sockfd, reinterpret_cast<struct sockaddr *>(&server), lenServer) < 0) {
             perror("bind failed");
             exit(EXIT_FAILURE);
         }
+    }
+
+    Packet *encode_message(Message *m) {
+        Packet *p = new Packet();
+        uint8_t ack = m->ack ? 1 : 0;
+        memcpy(p->buffer, &ack, sizeof(uint8_t));
+        memcpy(p->buffer + sizeof(uint8_t), &m->source_id, sizeof(uint8_t));
+        memcpy(p->buffer + 2 * sizeof(uint8_t), &m->destination_id, sizeof(uint8_t));
+        memcpy(p->buffer + 3 * sizeof(uint8_t), &m->origin_id, sizeof(uint8_t));
+        memcpy(p->buffer + 4 * sizeof(uint8_t), &m->message_id, sizeof(uint32_t));
+        return p;
+    }
+
+    Message *decode_packet(Packet *p) {
+        Message *m = new Message();
+        uint8_t ack = 0;
+        memcpy(&ack, p->buffer, sizeof(uint8_t));
+        memcpy(&m->source_id, p->buffer + sizeof(uint8_t), sizeof(uint8_t));
+        memcpy(&m->destination_id, p->buffer + 2 * sizeof(uint8_t), sizeof(uint8_t));
+        memcpy(&m->origin_id, p->buffer + 3 * sizeof(uint8_t), sizeof(uint8_t));
+        memcpy(&m->message_id, p->buffer + 4 * sizeof(uint8_t), sizeof(uint32_t));
+        m->ack = ack == 1;
+        return m;
     }
 };
