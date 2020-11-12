@@ -15,5 +15,4 @@ public class ConfigParser {
     public String getPath() {
         return path;
     }
-
 }

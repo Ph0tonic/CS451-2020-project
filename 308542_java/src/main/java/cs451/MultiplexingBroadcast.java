@@ -16,7 +16,7 @@ public class MultiplexingBroadcast implements FifoReceive {
     private MultiplexingReceive receiver;
 
     MultiplexingBroadcast(int id, int nbMessages, List<Host> hosts, MultiplexingReceive receiver) throws InterruptedException {
-        broadcast = new FifoBroadcast(id, nbMessages, hosts, this);
+        broadcast = new FifoBroadcast(id, (int) Math.ceil((float) nbMessages / (float) MULTIPLEX_MESSAGE_NUMBER), hosts, this);
         this.receiver = receiver;
 
         data = new byte[MULTIPLEX_MESSAGE_NUMBER * DATA_SIZE];
@@ -24,7 +24,7 @@ public class MultiplexingBroadcast implements FifoReceive {
     }
 
     void broadcast(int originId, int messageId) {
-        wrapper.put((byte)originId);
+        wrapper.put((byte) originId);
         wrapper.putInt(messageId);
         cachedMessages++;
 

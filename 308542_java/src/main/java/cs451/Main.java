@@ -99,7 +99,7 @@ public class Main {
             logger.log(BROADCAST + i);
         }
         broadcast.flush();
-        
+
         latch.await();
 
         System.out.println("Signaling end of broadcasting messages");

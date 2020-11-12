@@ -21,5 +21,4 @@ public class OutputParser {
     public String getPath() {
         return path;
     }
-
 }

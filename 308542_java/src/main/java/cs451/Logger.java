@@ -7,27 +7,25 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Logger {
     private static Logger INSTANCE;
-
-    public static synchronized Logger getInstance(String output){
-        if (INSTANCE == null) {
-            INSTANCE = new Logger(output);
-        }
-        return INSTANCE;
-    }
-
     private ConcurrentLinkedQueue<String> logs;
     private String output;
-
-    private Logger(String output){
+    private Logger(String output) {
         this.output = output;
         this.logs = new ConcurrentLinkedQueue<>();
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::dump));
     }
 
-    public void log(String log){
+    public static synchronized Logger getInstance(String output) {
+        if (INSTANCE == null) {
+            INSTANCE = new Logger(output);
+        }
+        return INSTANCE;
+    }
+
+    public void log(String log) {
         // System.out.println(log); //TODO: Comment this line for final release
-         logs.add(log);
+        logs.add(log);
     }
 
     public void dump() {
