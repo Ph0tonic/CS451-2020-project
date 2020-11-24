@@ -83,7 +83,6 @@ public class PerfectLinks implements UdpSocketReceive {
                         Message message = socketReceive[j].take();
 
                         if (stop) {
-                            System.out.println("Stopped");
                             return;
                         }
 

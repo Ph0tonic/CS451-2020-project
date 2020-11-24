@@ -23,92 +23,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8cd9a17f-6070-4b8e-a2c1-f4166b588618" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bin/README" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bin/deploy/README" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bin/logs/README" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cleanup.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/config" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/da_project.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/duo1.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/duo2.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hosts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/run.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/Main.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/Broadcast.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/BroadcastReceive.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/CausalOrderBroadcast.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/CausalOrderBroadcastReceive.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/MultiplexedBroadcast.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/MultiplexedBroadcastFactory.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/MultiplexedBroadcastReceive.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/UniformReliableBroadcast.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/UniformReliableBroadcastReceive.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/link/Message.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/link/PerfectLinks.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/link/PerfectLinksReceive.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/network/UdpSocket.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/network/UdpSocketReceive.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/utils/InMemoryLogger.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cs451/utils/Logger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/compiler.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/encodings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/jarRepositories.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/bin/README" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/bin/deploy/README" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/bin/logs/README" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/build.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/cleanup.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/config" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/da_project.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/duo1.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/duo2.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/duo3.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/duo4.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/duo5.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/hosts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/run.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/BarrierParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/BarrierParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/ConfigParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/ConfigParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/Constants.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/Coordinator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/Coordinator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/FifoBroadcast.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/FifoBroadcast.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/FifoReceive.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/Host.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/Host.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/HostsParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/HostsParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/IdParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/IdParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/Logger.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/Main.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/Message.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/MultiplexingBroadcast.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/MultiplexingReceive.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/OutputParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/OutputParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/PerfectLinks.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/PerfectLinksReceive.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/ReliableBroadcast.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/ReliableBroadcastReceive.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/SignalParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/config/SignalParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/UdpSocket.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/src/main/java/cs451/UdpSocketReceive.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../308542_java/t.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/uiDesigner.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cs451/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cs451/broadcast/CausalOrderBroadcast.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/CausalOrderBroadcast.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cs451/broadcast/MultiplexedBroadcast.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cs451/broadcast/MultiplexedBroadcast.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc01.stderr" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc01.stderr" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc01.stdout" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc01.stdout" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc02.stderr" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc02.stderr" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc02.stdout" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc02.stdout" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc03.stderr" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc03.stderr" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc03.stdout" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc03.stdout" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc04.stderr" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc04.stderr" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc04.stdout" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc04.stdout" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc05.stderr" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc05.stderr" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logs/proc05.stdout" beforeDir="false" afterPath="$PROJECT_DIR$/../logs/proc05.stdout" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../validate.py" beforeDir="false" afterPath="$PROJECT_DIR$/../validate.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -140,7 +76,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
@@ -179,6 +115,14 @@
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
     <state x="743" y="487" key="#com.intellij.refactoring.move.moveClassesOrPackages.MoveClassesOrPackagesDialog.packages/1920.125.1536.832/0.0.1920.1160@0.0.1920.1160" timestamp="1605683322553" />
+    <state x="740" y="335" key="FileChooserDialogImpl" timestamp="1606203743074">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state x="740" y="335" key="FileChooserDialogImpl/1920.125.1536.832/0.0.1920.1160@0.0.1920.1160" timestamp="1606203743074" />
+    <state x="667" y="312" width="585" height="534" key="find.popup" timestamp="1606203550714">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state x="667" y="312" width="585" height="534" key="find.popup/1920.125.1536.832/0.0.1920.1160@0.0.1920.1160" timestamp="1606203550714" />
     <state x="623" y="255" width="672" height="678" key="search.everywhere.popup" timestamp="1605635536837">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>

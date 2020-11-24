@@ -21,12 +21,11 @@ public class MultiplexedBroadcast implements BroadcastReceive {
     // UDP Header = 8
     // MAX Causal header = 127*4 = 508
     // Max udp packet size = 65 507
-    private static final int MAX_DATA_SIZE = 64090;
+    private static final int MAX_DATA_SIZE = 5; // 64090; // TODO: Change this
     private static final int DATA_SIZE = 5;
     private final MultiplexedBroadcastReceive receiver;
     byte[] data;
     ByteBuffer wrapper;
-    int cachedMessages = 0;
     private Broadcast broadcast;
 
     public MultiplexedBroadcast(MultiplexedBroadcastReceive receiver) {
@@ -47,7 +46,6 @@ public class MultiplexedBroadcast implements BroadcastReceive {
     public void broadcast(int originId, int data) {
         wrapper.put((byte) originId);
         wrapper.putInt(data);
-        cachedMessages++;
 
         if (wrapper.position() == MAX_DATA_SIZE) {
             flush();
@@ -55,17 +53,18 @@ public class MultiplexedBroadcast implements BroadcastReceive {
     }
 
     public void flush() {
-        broadcast.broadcast(Arrays.copyOfRange(wrapper.array(), 0, cachedMessages * DATA_SIZE));
-        cachedMessages = 0;
-        wrapper.clear();
+        if (wrapper.position() > 0) {
+            broadcast.broadcast(Arrays.copyOfRange(wrapper.array(), 0, wrapper.position()));
+            wrapper.clear();
+        }
     }
 
     @Override
     public void deliver(int originId, byte[] data) {
         ByteBuffer buffer = ByteBuffer.wrap(data, 0, data.length);
-        int size = data.length / DATA_SIZE;
+        int nbPacket = data.length / DATA_SIZE;
 
-        for (int i = 0; i < size; ++i) {
+        for (int i = 0; i < nbPacket; ++i) {
             originId = buffer.get();
             int messageId = buffer.getInt();
             receiver.deliver(originId, messageId);

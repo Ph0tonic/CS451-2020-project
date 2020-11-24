@@ -124,7 +124,6 @@ public class Main {
 
         int id = parser.myId();
 
-
         MultiplexedBroadcastReceive receiver = (originId, messageId) -> {
             logger.log(DELIVER + originId + SPACE + messageId);
             if (originId == id) {
@@ -149,8 +148,10 @@ public class Main {
 
         System.out.println("Broadcasting messages...");
         for (int i = 1; i <= nbMessage; ++i) {
-            broadcast.broadcast(id, i);
+            // TODO: Remove me !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // Thread.sleep(200);
             logger.log(BROADCAST + i);
+            broadcast.broadcast(id, i);
         }
         broadcast.flush();
 

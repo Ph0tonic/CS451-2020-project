@@ -1,4 +1,0 @@
-java.lang.Exception: Invalid config file
-	at cs451.Main.main(Main.java:104)
-Exception in thread "main" java.lang.InterruptedException: Invalid config file
-	at cs451.Main.main(Main.java:109)
