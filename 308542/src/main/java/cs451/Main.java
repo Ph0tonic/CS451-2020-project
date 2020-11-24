@@ -118,8 +118,11 @@ public class Main {
 
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
 
-        // TODO: Make a final choice
-        CountDownLatch latch = new CountDownLatch(nbMessage); // * parser.hosts().size());
+        // We assume a majority of correct processes
+        CountDownLatch latch = new CountDownLatch(nbMessage * (nbHost / 2));
+        CountDownLatch ownLatch = new CountDownLatch(nbMessage);
+        System.out.println("Waiting on " + (nbMessage * (nbHost / 2 + 1)) + " messages");
+
         Logger logger = InMemoryLogger.getInstance(parser.output());
 
         int id = parser.myId();
@@ -127,6 +130,8 @@ public class Main {
         MultiplexedBroadcastReceive receiver = (originId, messageId) -> {
             logger.log(DELIVER + originId + SPACE + messageId);
             if (originId == id) {
+                ownLatch.countDown();
+            } else {
                 latch.countDown();
             }
         };
@@ -148,13 +153,12 @@ public class Main {
 
         System.out.println("Broadcasting messages...");
         for (int i = 1; i <= nbMessage; ++i) {
-            // TODO: Remove me !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            // Thread.sleep(200);
             logger.log(BROADCAST + i);
             broadcast.broadcast(id, i);
         }
         broadcast.flush();
 
+        ownLatch.await();
         latch.await();
 
         System.out.println("Signaling end of broadcasting messages");

@@ -20,7 +20,7 @@ public class CausalOrderBroadcast implements UniformReliableBroadcastReceive, Br
 
     private final UniformReliableBroadcast broadcast;
     private final BroadcastReceive receiver;
-    
+
     private final BlockingQueue<PendingMessage> received;
     private volatile boolean stopped;
     private Thread listener;
@@ -52,16 +52,13 @@ public class CausalOrderBroadcast implements UniformReliableBroadcastReceive, Br
             while (!stopped) {
                 try {
                     var message = received.take();
-                    System.out.println("Taken message causal of "+message.originId+" "+message.messageId+" "+Arrays.toString(message.vectorClock));
-
                     if (stopped) {
                         return;
                     }
 
                     if (canDeliver(message)) {
-                        receiver.deliver(message.originId, message.data);
                         vectorClock[message.originId - 1]++;
-                        System.out.println("Deliver");
+                        receiver.deliver(message.originId, message.data);
 
                         boolean removed;
                         do {
@@ -70,9 +67,8 @@ public class CausalOrderBroadcast implements UniformReliableBroadcastReceive, Br
                             while (it.hasNext()) {
                                 PendingMessage m = it.next();
                                 if (canDeliver(m)) {
-                                    System.out.println("Deliver");
-                                    receiver.deliver(m.originId, m.data);
                                     vectorClock[m.originId - 1]++;
+                                    receiver.deliver(m.originId, m.data);
                                     it.remove();
                                     removed = true;
                                 }
@@ -80,7 +76,6 @@ public class CausalOrderBroadcast implements UniformReliableBroadcastReceive, Br
                         } while (removed);
 
                     } else {
-                        System.out.println("Cannot deliver");
                         pending.add(message);
                     }
                 } catch (InterruptedException e) {
@@ -106,7 +101,6 @@ public class CausalOrderBroadcast implements UniformReliableBroadcastReceive, Br
         for (int i = 0; i < nbCausal[originId - 1]; ++i) {
             vc[i] = buffer.getInt();
         }
-        System.out.println("VC of "+originId+" "+Arrays.toString(vc));
         received.add(new PendingMessage(originId, messageId, vc, payload));
     }
 

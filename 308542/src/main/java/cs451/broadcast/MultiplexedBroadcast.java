@@ -21,8 +21,9 @@ public class MultiplexedBroadcast implements BroadcastReceive {
     // UDP Header = 8
     // MAX Causal header = 127*4 = 508
     // Max udp packet size = 65 507
-    private static final int MAX_DATA_SIZE = 5; // 64090; // TODO: Change this
+    private static final int MAX_DATA_SIZE = 64090;
     private static final int DATA_SIZE = 5;
+
     private final MultiplexedBroadcastReceive receiver;
     byte[] data;
     ByteBuffer wrapper;
