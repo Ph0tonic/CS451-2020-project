@@ -598,7 +598,8 @@ def main(processes, messages, runscript, broadcastType, logsDir, testConfig):
         validation = LCausalBroadcastValidation(processes, messages, logsDir, None)
 
     hostsFile, configFile = validation.generateConfig()
-
+    procs = None
+    
     try:
         # Start the processes and get their PIDs
         procs = startProcesses(processes, runscript, hostsFile.name, configFile.name, logsDir)
