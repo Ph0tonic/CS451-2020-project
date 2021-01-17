@@ -1,5 +1,10 @@
 # Distributed Algorithms 2020/21 - EPFL
 
+This project's aim was to implement a fifo broadcast and a causal order broadcast. The implementation in Java has great performances.
+
+Such as to improve the throughput, a layer above fifo and causal broadcast has been implemented to pack multiples messages into one and therfore reducing greatly the number of messages to send. Warning, this implementation might not work on a real network as the size of the udp packets has been maximise regarding a local use.
+
+The validation part of the causal algorithm in `validate.py` has been cherry picked from this repo [https://github.com/vincentballet/LocalizedCausalBroadcast](https://github.com/vincentballet/LocalizedCausalBroadcast) and updated to work with the current test system.
 
 # Overview
 The goal of this practical project is to implement certain building blocks necessary for a decentralized system. To this end, some underlying abstractions will be used:
